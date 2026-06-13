@@ -11,16 +11,37 @@
     document.head.appendChild(script);
   }
 
+  let scheduled = false;
+
   function renderIcons() {
-    lucide.createIcons();
+    if (!window.lucide) return;
+
+    if (scheduled) return;
+    scheduled = true;
+
+    requestAnimationFrame(() => {
+      lucide.createIcons();
+      scheduled = false;
+    });
   }
 
   function init() {
     renderIcons();
 
-    new MutationObserver(renderIcons).observe(document.body, {
+    new MutationObserver((mutations) => {
+      let shouldUpdate = false;
+
+      for (const m of mutations) {
+        if (m.type === "childList") shouldUpdate = true;
+        if (m.type === "attributes") shouldUpdate = true;
+      }
+
+      if (shouldUpdate) renderIcons();
+    }).observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-lucide"]
     });
   }
 
